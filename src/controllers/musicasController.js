@@ -12,7 +12,7 @@ const getById = (req, res) => {
     const musica = musicas.find((musica) => musica.id == id)
 
     
-    res.sendStatus(200).send(musica)
+    res.status(200).send(musica)
     
 }
 
