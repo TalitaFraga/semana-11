@@ -42,8 +42,46 @@ const deleteMusicas = (req, res) => {
     }
 } 
 
+const putMusicas = (req, res) => {
+    try {
+        const id = req.params.id
 
-module.exports = { getAll, getById, postMusicas, deleteMusicas }
+        const newMusica = req.body
+
+        const MusicaAtualizada = musicas.map((musica) => {
+            if(musica.id == id) return newMusica
+            return musica
+        })
+
+        fsWriteFile()
+    
+    } catch (err) {
+        return res.status(424).send({ message: err })
+    }
+
+}
+
+const patchMusicas = (req, res) => {
+    const id = req.params.id
+    const atualizacao = req.body
+
+    try {
+        const musicaASerModificada = musicas.find((musica) => musica.id == id)
+
+        Object.keys(atualizacao).forEach((chave) => {
+            musicaASerModificada[chave] = atualizacao[chave]
+        })
+
+        fsWriteFile(res)
+
+        res.status(200).send(musicas)
+
+    } catch(err) {
+        return res.status(424).send({ message: err })
+    }
+}
+
+module.exports = { getAll, getById, postMusicas, deleteMusicas, putMusicas, patchMusicas }
 
 
 
