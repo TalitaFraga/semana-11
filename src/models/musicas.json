@@ -29,6 +29,14 @@
     "duration": "04:06",
     "launchYear": "2006",
     "favorited": true,
-    "artists": "John Mayer"
+    "artists": ["John Mayer"]
+  },
+  {
+    "id": 5,
+    "title": "Salvame",
+    "duration": "03:44",
+    "launchYear": "2004",
+    "favorited": true,
+    "artists": ["RBD"]
   }
 ]

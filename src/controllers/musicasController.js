@@ -11,34 +11,60 @@ const getById = (req, res) => {
 
     const musica = musicas.find((musica) => musica.id == id)
 
-    
-    res.status(200).send(musica)
+    if (musica) {
+        res.status(200).send(musica)
+    } else {
+        res.status(404).send("Música não encontrada")
+    }
     
 }
 
-const postMusicas = (req, res) => {
-    console.log(req.body)
-    const { id, title, duration, launchYear, favorited, artists } = req.body
-    musicas.push({ id, title, duration, launchYear, favorited, artists })
+const getByArtists = (req, res) => {
+    const artists = req.params.artists
 
-    fsWriteFile(res)
+    const musicasEncontradas = musicas.filter((musica) => musica.artists.includes(artists))
+
+    if(musicasEncontradas.length > 0) {
+        res.status(200).send(musicasEncontradas)
+    } else {
+        res.status(404).send("Artista não encontrado")
+    }
+}
+
+const getByYear = (req, res) => {
+    const launchYear = req.params.launchYear
+
+    const musicasEncontradas = musicas.filter((musica) => musica.launchYear >= launchYear)
+
+    if(musicasEncontradas.length > 0) {
+        res.status(200).send(musicasEncontradas)
+    } else {
+        res.status(404).send("Músicas não encontradas")
+    }
+}
+
+const postMusicas = (req, res) => {
+
+    const { title, duration, launchYear, favorited, artists } = req.body
+
+    musicas.push({ id:musicas.length + 1, title, duration, launchYear, favorited, artists })
+
+    fsWriteFile(res, musicas)
 
     res.status(201).send(musicas)
-
 }
 
 const deleteMusicas = (req, res) => {
     try {
         const id = req.params.id
-        const musicaFiltrada = musicas.filter(musica => musica.id == id )
+        const musicaFiltrada = musicas.filter(musica => musica.id != id )
 
-        fsWriteFile(res)
+        fsWriteFile(res, musicaFiltrada)
+        res.status(200).send(musicaFiltrada)
     
     
-    } catch (error) {
-        console.log(error)
+    } catch (error) {   
         res.status(500).send({ message: "Erro ao deletar música"})
-
     }
 } 
 
@@ -48,47 +74,57 @@ const putMusicas = (req, res) => {
 
         const newMusica = req.body
 
-        const MusicaAtualizada = musicas.map((musica) => {
+        const musicasAtualizadas = musicas.map((musica) => {
             if(musica.id == id) return newMusica
             return musica
         })
 
-        fsWriteFile()
+        fsWriteFile(res, musicasAtualizadas)
+        res.status(200).send(musicasAtualizadas)
     
     } catch (err) {
         return res.status(424).send({ message: err })
     }
-
 }
 
-const patchMusicas = (req, res) => {
-    const id = req.params.id
-    const atualizacao = req.body
-
+const patchMusicasStatus = (req, res) => {
     try {
-        const musicaASerModificada = musicas.find((musica) => musica.id == id)
+        const id = req.params.id
+        const newFavorited = req.body.favorited
 
-        Object.keys(atualizacao).forEach((chave) => {
-            musicaASerModificada[chave] = atualizacao[chave]
-        })
+        const musicaToUpdate = musicas.find(musica => musica.id == id)
+        const musicaIndex = musicas.indexOf(musicaToUpdate)
 
-        fsWriteFile(res)
+        if (musicaIndex >= 0) {
 
-        res.status(200).send(musicas)
-
-    } catch(err) {
-        return res.status(424).send({ message: err })
+            musicaToUpdate.favorited = newFavorited
+            musicas.splice(musicaIndex, 1, musicaToUpdate)
+            fs.writeFile("./src/models/musicas.json", JSON.stringify(musicas), 'utf8', function(err) {
+                if (err) {
+                    res.status(500).send(err)
+                } else {
+                    console.log("Arquivo de filme foi atualizado com sucesso!")
+                    const musicaToUpdate = musicas.find(musica => musica.id == id)
+                    res.status(200).send(musicaToUpdate)
+                }
+            })    
+        } else {
+            res.status(400).send({ message: "Musica não encontrada para atualizar o status de favorita"})
+        }
+    } catch (err) {
+        res.status(500).send("Erro na api")
     }
 }
 
-module.exports = { getAll, getById, postMusicas, deleteMusicas, putMusicas, patchMusicas }
+module.exports = { getAll, getById, getByArtists, getByYear, postMusicas, deleteMusicas, putMusicas, patchMusicasStatus }
 
 
-
-const fsWriteFile = (res) => fs.writeFile("./src/models/musicas.json", JSON.stringify(musicas), 'utf8', function(err) {
+const fsWriteFile = (res,data) => { 
+    fs.writeFile("./src/models/musicas.json", JSON.stringify(data), 'utf8', function(err) {
     if (err) {
         console.log(err)
         return res.status(424).send({ message: err })
     }
     console.log("Arquivo atualizado com sucesso!")
 })
+}
